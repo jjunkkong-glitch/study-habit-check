@@ -73,10 +73,43 @@ p{margin:0 0 10px}
 .note{background:#FFFBE6; border-radius:14px; padding:14px 16px; font-size:14px}
 .foot{font-size:12.5px; color:var(--sub); margin-top:8px}
 
-@media print{
-  body{background:#fff}
-  .noprint{display:none !important}
-  .card{box-shadow:none; border:1px solid var(--line); break-inside:avoid}
+@page {
+  size: A4;
+  margin: 14mm;
+}
+@media print {
+  html, body {
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .wrap {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  .noprint, button { display: none !important; }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin: 0 0 10mm;
+    padding: 8mm;
+    /* 긴 결과 카드가 페이지 밖으로 밀리거나 잘리지 않도록 허용 */
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  .arow, .sbox, .note, .ahead, h1, h2, h3 {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .radar { max-height: 105mm; }
+  .foot { color: #444 !important; }
+  .bar { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
   .card p .step{display:inline-block;margin-top:6px;color:#1F5F8B}
 .goal-choices{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}
@@ -380,7 +413,7 @@ function viewResult(){
   h += '<div class="card"><div class="note"><b>함께 보는 부모님께</b><br>' +
     '결과를 평가하거나 지적하기보다 아이가 왜 그렇게 골랐는지 먼저 들어 주세요. 아이가 직접 고른 한 가지를 일주일 동안 가볍게 시도해 보는 것으로 충분해요.</div>' +
     '<div class="row noprint"><button class="btn ghost" data-act="restart">다시 해 보기</button>' +
-    '<button class="btn" data-act="print">결과 저장·인쇄하기</button></div></div>' +
+    '<button class="btn" type="button" data-act="print" onclick="window.print(); return false;">결과 저장·인쇄하기</button></div></div>' +
     '<p class="foot">이 점검표는 AI의 도움을 받아 만든 참고용 체크리스트이며 전문 검사가 아닙니다. 점수는 다른 사람과 비교하거나 평가하는 데 쓰지 마세요. 오랫동안 많이 힘들다면 학교 선생님이나 전문가와 상담해 보세요.</p>';
   return h;
 }
@@ -426,7 +459,9 @@ app.addEventListener("click", function(e){
     state.ans = AREAS.map(function(a){ return a.q.map(function(){ return null; }); });
     state.step = -1; render();
   }
-  else if (act === "print") { window.print(); }
+  else if (act === "print") {
+    // 인쇄는 버튼 자체의 클릭 핸들러에서 실행합니다.
+  }
 });
 
 render();
