@@ -93,6 +93,7 @@ p{margin:0 0 10px}
     padding: 0;
   }
   .noprint, button { display: none !important; }
+  #pdfContent .noprint, #pdfContent button { display: none !important; }
   .card {
     box-shadow: none !important;
     border: 1px solid var(--line);
@@ -122,6 +123,7 @@ p{margin:0 0 10px}
 <body>
 <div class="wrap" id="app"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.3/html2pdf.bundle.min.js"></script>
 <script>
 /* ====== 점검 영역·문항·조언 데이터 (직접 수정 가능) ====== */
 var CHOICES = [
@@ -413,13 +415,19 @@ function viewResult(){
   h += '<div class="card"><div class="note"><b>함께 보는 부모님께</b><br>' +
     '결과를 평가하거나 지적하기보다 아이가 왜 그렇게 골랐는지 먼저 들어 주세요. 아이가 직접 고른 한 가지를 일주일 동안 가볍게 시도해 보는 것으로 충분해요.</div>' +
     '<div class="row noprint"><button class="btn ghost" data-act="restart">다시 해 보기</button>' +
-    '<button class="btn" type="button" data-act="print" onclick="window.print(); return false;">결과 저장·인쇄하기</button></div></div>' +
+    '<button class="btn" type="button" data-act="pdf">PDF 저장하기</button></div></div>' +
     '<p class="foot">이 점검표는 AI의 도움을 받아 만든 참고용 체크리스트이며 전문 검사가 아닙니다. 점수는 다른 사람과 비교하거나 평가하는 데 쓰지 마세요. 오랫동안 많이 힘들다면 학교 선생님이나 전문가와 상담해 보세요.</p>';
   return h;
 }
 
 function render(){
-  app.innerHTML = state.step === -1 ? viewIntro() : (state.step < AREAS.length ? viewQuiz() : viewResult());
+  if (state.step === -1) {
+    app.innerHTML = viewIntro();
+  } else if (state.step < AREAS.length) {
+    app.innerHTML = viewQuiz();
+  } else {
+    app.innerHTML = '<div id="pdfContent">' + viewResult() + '</div>';
+  }
   if (state.step >= 0 && state.step < AREAS.length) updateNav();
   window.scrollTo(0, 0);
 }
@@ -459,8 +467,52 @@ app.addEventListener("click", function(e){
     state.ans = AREAS.map(function(a){ return a.q.map(function(){ return null; }); });
     state.step = -1; render();
   }
-  else if (act === "print") {
-    // 인쇄는 버튼 자체의 클릭 핸들러에서 실행합니다.
+  else if (act === "pdf") {
+    var pdfButton = t;
+    var pdfContent = document.getElementById("pdfContent");
+    if (!pdfContent) {
+      alert("결과 화면에서 PDF 저장을 눌러 주세요.");
+      return;
+    }
+    if (typeof html2pdf === "undefined") {
+      alert("PDF 저장 기능을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.");
+      return;
+    }
+    pdfButton.disabled = true;
+    var originalText = pdfButton.textContent;
+    pdfButton.textContent = "PDF 만드는 중...";
+    var pdfOptions = {
+      margin: [8, 8, 10, 8],
+      filename: "나의_공부습관_점검결과.pdf",
+      image: { type: "jpeg", quality: 0.96 },
+      html2canvas: {
+        scale: 1.6,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: Math.max(document.documentElement.clientWidth, 360)
+      },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"], avoid: [".arow", ".sbox", ".note"] }
+    };
+    html2pdf().set(pdfOptions).from(pdfContent).toPdf().get("pdf").then(function(pdf) {
+      var totalPages = pdf.internal.getNumberOfPages();
+      for (var page = 1; page <= totalPages; page++) {
+        pdf.setPage(page);
+        pdf.setFontSize(8);
+        pdf.setTextColor(120);
+        pdf.text(page + " / " + totalPages, 200, 290, { align: "right" });
+      }
+    }).save().then(function() {
+      pdfButton.disabled = false;
+      pdfButton.textContent = originalText;
+    }).catch(function(error) {
+      console.error("PDF 생성 오류:", error);
+      pdfButton.disabled = false;
+      pdfButton.textContent = originalText;
+      alert("PDF를 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+    });
   }
 });
 
