@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공부 습관 자기 점검표</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{
+  --navy:#1F3A5F; --ink:#233044; --sub:#5B6B7F;
+  --mint:#DDF3EC; --sky:#E3F1FB; --lime:#E4F58A;
+  --line:#D5E3EA; --accent:#2E8B7A;
+  --high:#2E8B7A; --mid:#4A87C7; --grow:#E0953A;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink);
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  background:linear-gradient(180deg,#EAF7F3 0%,#EAF3FB 100%);
+  line-height:1.6; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px; margin:0 auto; padding:24px 16px 56px}
+.card{background:#fff; border-radius:20px; padding:24px; box-shadow:0 6px 24px rgba(31,58,95,.08); margin-bottom:16px}
+h1{font-size:26px; line-height:1.35; margin:0 0 12px; color:var(--navy)}
+h2{font-size:20px; margin:0 0 4px; color:var(--navy)}
+h3{font-size:16px; margin:0 0 6px; color:var(--navy)}
+p{margin:0 0 10px}
+.hl{background:linear-gradient(transparent 62%, var(--lime) 62%)}
+.muted{color:var(--sub); font-size:14px}
+.pill{display:inline-block; font-size:13px; padding:3px 10px; border-radius:999px; background:var(--sky); color:var(--navy); margin-bottom:10px}
+.btn{
+  appearance:none; border:0; cursor:pointer; font:inherit; font-weight:600;
+  padding:13px 22px; border-radius:14px; background:var(--navy); color:#fff;
+}
+.btn.ghost{background:#fff; color:var(--navy); border:1.5px solid var(--navy)}
+.btn[disabled]{opacity:.35; cursor:not-allowed}
+.row{display:flex; gap:10px; justify-content:space-between; margin-top:18px; flex-wrap:wrap}
+.guide{margin:14px 0 0; padding:0; list-style:none}
+.guide li{padding:6px 0 6px 22px; position:relative; font-size:15px}
+.guide li:before{content:""; position:absolute; left:2px; top:14px; width:9px; height:9px; border-radius:50%; background:var(--accent)}
+
+/* progress */
+.steps{display:flex; gap:6px; margin-bottom:14px}
+.steps span{flex:1; height:7px; border-radius:99px; background:var(--line)}
+.steps span.done{background:var(--accent)}
+.steps span.now{background:var(--navy)}
+
+/* question */
+.q{padding:16px 0; border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0}
+.qt{font-weight:600; margin-bottom:10px}
+.choices{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.choice{
+  appearance:none; font:inherit; font-size:14px; cursor:pointer;
+  padding:11px 6px; border-radius:12px; border:1.5px solid var(--line); background:#fff; color:var(--ink);
+}
+.choice:hover{border-color:var(--accent)}
+.choice.on{background:var(--mint); border-color:var(--accent); font-weight:700; color:#16524A}
+
+/* result */
+.summary{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px}
+.sbox{border-radius:14px; padding:14px; background:var(--sky)}
+.sbox.a{background:var(--mint)}
+.sbox small{display:block; color:var(--sub); font-size:12px}
+.sbox b{font-size:16px; color:var(--navy)}
+.radar{width:100%; max-width:480px; display:block; margin:6px auto}
+.arow{border-top:1px solid var(--line); padding:16px 0}
+.arow:first-of-type{border-top:0}
+.ahead{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:6px}
+.badge{font-size:12px; font-weight:700; color:#fff; padding:3px 10px; border-radius:999px; white-space:nowrap}
+.bar{height:9px; border-radius:99px; background:var(--line); overflow:hidden; margin:6px 0 10px}
+.bar i{display:block; height:100%; border-radius:99px}
+.note{background:#FFFBE6; border-radius:14px; padding:14px 16px; font-size:14px}
+.foot{font-size:12.5px; color:var(--sub); margin-top:8px}
+
+@media print{
+  body{background:#fff}
+  .noprint{display:none !important}
+  .card{box-shadow:none; border:1px solid var(--line); break-inside:avoid}
+}
+  .card p .step{display:inline-block;margin-top:6px;color:#1F5F8B}
+.goal-choices{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}
+.goal-choice{appearance:none;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:12px 8px;cursor:pointer}
+.goal-choice:hover,.goal-choice.on{border-color:var(--accent);background:var(--mint);color:#16524A}
+.goal-result{padding:14px 16px;border-radius:14px;background:#F3F7FA;font-size:14px;color:var(--ink);min-height:54px}
+@media print{.goal-choices{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ====== 점검 영역·문항·조언 데이터 (직접 수정 가능) ====== */
+var CHOICES = [
+  {label:"거의 아니에요", v:0},
+  {label:"가끔 그래요", v:1},
+  {label:"자주 그래요", v:2}
+];
+
+var AREAS = [
+  {
+    name:"공부 마음가짐", hint:"공부를 대하는 생각과 태도",
+    q:[
+      "모르는 문제가 나와도 일단 해 보려고 한다.",
+      "공부하다가 ‘아, 알겠다’ 싶은 순간이 있다.",
+      "지금 하는 공부가 내 앞날 어딘가에 쓰일 거라고 생각한다.",
+      "점수만이 아니라 지난번보다 얼마나 늘었는지도 살펴본다.",
+      "틀린 문제를 보면 창피하기보다 어디서 막혔는지 궁금하다.",
+      "스스로 자신 있다고 느끼는 과목이나 단원이 있다.",
+      "하기 싫은 날에도 책을 펴는 것까지는 해 본다.",
+      "공부는 꾸준히 쌓여야 결과가 난다고 생각한다."
+    ],
+    advice:[
+      "공부를 대하는 마음이 아주 단단해요. 낯선 문제 앞에서도 일단 해 보고, 틀려도 거기서 배우려는 태도가 보여요. 이 마음을 지키면서 지난번보다 늘어난 점을 가끔 적어 두면 더 오래 힘이 돼요.",
+      "공부를 대하는 마음이 든든한 편이에요. 어려운 날에도 책을 펴 보려는 힘이 있어요. 이어 가기: 자신 있는 과목에서 얻은 좋은 기분을 다른 과목에도 가져가 보세요.",
+      "잘 풀리는 날과 막히는 날에 따라 마음이 달라지는 시기예요. 그건 자연스러운 일입니다. 첫걸음: 이번 주에 ‘아, 알겠다’ 싶었던 순간을 한 줄로 적어 보세요.",
+      "공부가 부담스럽게 느껴질 때가 많은 것 같아요. 지금은 잘하려는 마음보다 작은 성공을 쌓는 게 먼저예요. 첫걸음: 쉬운 문제 세 개를 골라 풀고, 맞힌 것에 동그라미를 쳐 보세요.",
+      "공부 생각만 해도 마음이 무거울 수 있어요. 그럴 때는 목표를 아주 작게 줄이는 게 가장 좋아요. 첫걸음: 오늘은 교과서를 5분만 펴 보고, 해냈다면 그것으로 충분하다고 스스로에게 말해 주세요."
+    ]
+  },
+  {
+    name:"공부 방법", hint:"공부하는 방식과 확인하는 습관",
+    q:[
+      "외우기 전에 먼저 이해해 보려고 한다.",
+      "문제를 풀 때 무엇을 묻는지 먼저 읽고 생각한다.",
+      "틀린 문제는 왜 틀렸는지 확인하고 넘어간다.",
+      "공부한 내용을 나중에 다시 한 번 훑어본다.",
+      "중요한 부분과 덜 중요한 부분을 나눠서 공부한다.",
+      "시험 직전에 몰아서 하기보다 미리 나눠서 한다.",
+      "설명을 듣거나 읽기만 하지 않고 직접 풀어 보거나 써 본다.",
+      "나에게 맞는 공부 방법이 무엇인지 찾아보는 중이다."
+    ],
+    advice:[
+      "이해하고, 확인하고, 다시 보는 흐름이 아주 잘 잡혀 있어요. 나만의 공부 노하우가 생기고 있는 단계예요. 효과가 좋았던 방법을 정리해 두면 새 과목이나 새 학년에서도 바로 쓸 수 있어요.",
+      "공부 방법이 든든한 편이에요. 기본 흐름은 잡혔으니 빠진 단계가 있는지만 살펴보세요. 이어 가기: 시험 전에 틀린 문제만 모아 한 번 더 풀어 보세요.",
+      "방법은 괜찮지만 빠지는 단계가 있을 수 있어요. 첫걸음: 이번에 틀린 문제만 모아 ‘왜 틀렸는지’를 한 줄씩 적어 보세요.",
+      "공부한 시간에 비해 남는 게 적게 느껴질 수 있어요. 시간을 늘리기 전에 방법을 조금 바꿔 보세요. 첫걸음: 한 단원을 읽은 뒤 책을 덮고 기억나는 것을 말하거나 써 보세요.",
+      "지금은 읽고 외우는 것 위주일 수 있어요. 방법을 하나만 바꿔도 달라질 수 있어요. 첫걸음: 문제를 풀고 나서 맞든 틀리든 해설을 읽고, 이해한 내용을 한 줄로 적어 보세요."
+    ]
+  },
+  {
+    name:"생활 리듬", hint:"잠, 시간, 공부 환경",
+    q:[
+      "일어나는 시간과 자는 시간이 비슷한 편이다.",
+      "주말에도 하루를 어떻게 보낼지 대략 생각해 둔다.",
+      "공부를 시작하기 전에 책상 위를 한 번 정리한다.",
+      "집에 공부에 집중할 수 있는 나만의 자리가 있다.",
+      "내가 챙길 준비물이나 해야 할 일은 말하기 전에 스스로 한다.",
+      "하루 중 쉬는 시간과 공부 시간을 나눠서 쓴다.",
+      "가방, 서랍, 책꽂이가 대체로 정돈되어 있다.",
+      "학교에 다녀온 뒤 해야 할 일의 순서가 어느 정도 정해져 있다."
+    ],
+    advice:[
+      "생활 리듬이 공부를 아주 든든하게 받쳐 주고 있어요. 규칙적인 생활은 집중력과 체력의 바탕이 됩니다. 쉬는 시간과 잠도 충분히 챙기면서 지금처럼 이어 가세요.",
+      "생활 리듬이 안정적인 편이에요. 가끔 흔들려도 금방 돌아오는 힘이 있어요. 이어 가기: 주말 하루의 큰 흐름만 미리 정해 두어 보세요.",
+      "대체로 괜찮지만 흔들리는 날이 있어요. 첫걸음: 잠드는 시간과 일어나는 시간 중 하나만 정해서 일주일 동안 지켜 보세요.",
+      "생활이 들쭉날쭉해서 공부할 시간을 만들기 어려울 수 있어요. 한꺼번에 바꾸려 하지 말고 한 가지부터 시작해요. 첫걸음: 공부하기 전에 책상 위를 1분만 정리해 보세요.",
+      "하루의 흐름이 많이 흔들리고 있는 것 같아요. 가장 쉬운 것 하나부터 정해 보세요. 첫걸음: 일어나는 시간만 매일 비슷하게 맞춰 보고, 지킨 날을 달력에 표시해 보세요."
+    ]
+  },
+  {
+    name:"계획과 실천", hint:"계획을 세우고 지키는 힘",
+    q:[
+      "하루나 한 주의 공부 계획을 세운다.",
+      "계획은 해낼 수 있는 양으로 현실적으로 잡는다.",
+      "세운 계획의 대부분은 지키는 편이다.",
+      "계획을 못 지킨 날에는 이유를 생각해 보고 다음에 고친다.",
+      "급한 일과 중요한 일을 나눠서 순서를 정한다.",
+      "시작한 공부는 정한 분량까지 마무리하려고 한다.",
+      "쉬는 시간이나 이동 시간 같은 짧은 틈도 활용해 본다.",
+      "매일 비슷한 시간에 공부를 시작하려고 한다."
+    ],
+    advice:[
+      "계획을 세우고 지키는 힘이 아주 좋아요. 계획대로 안 된 날에도 고쳐 가며 이어 가는 모습이 큰 장점입니다. 계획표에 ‘쉬는 시간’과 ‘여유 시간’도 꼭 넣어 두세요.",
+      "계획을 대체로 잘 지키는 편이에요. 지키기 어려웠던 계획이 무엇이었는지만 살펴봐도 더 좋아져요. 이어 가기: 한 주가 끝나면 지킨 것과 못 지킨 것을 한 줄씩 적어 보세요.",
+      "계획은 세우는데 지키기 어려운 날이 있죠. 계획이 너무 빡빡한 건 아닌지 살펴보세요. 첫걸음: 오늘 할 일을 세 가지만 적고 하나씩 지워 보세요.",
+      "계획을 세우기 어렵거나, 세워도 이어 가기 힘든 편이에요. 욕심내지 말고 아주 작게 시작해요. 첫걸음: 매일 같은 시간에 15분만 공부하기를 일주일 동안 해 보세요.",
+      "계획 없이 그때그때 하게 되는 날이 많은 것 같아요. 거창한 계획표는 오히려 부담이 돼요. 첫걸음: 자기 전에 ‘내일 가장 먼저 할 것’ 하나만 적어 두세요."
+    ]
+  },
+  {
+    name:"스스로 조절하기", hint:"유혹과 감정을 다루는 힘",
+    q:[
+      "휴대전화나 게임 시간을 정해 두고 지키려고 한다.",
+      "공부할 때 휴대전화를 눈에 안 보이는 곳에 둔다.",
+      "친구가 놀자고 해도 할 일이 있으면 미룰 수 있다.",
+      "기분이 안 좋은 날에도 꼭 해야 할 일은 해내는 편이다.",
+      "하고 싶은 것과 해야 할 것 사이에서 스스로 선택할 수 있다.",
+      "미루고 싶을 때 일단 시작하게 만드는 나만의 방법이 있다.",
+      "속상하거나 짜증 날 때 마음을 가라앉히는 나만의 방법이 있다.",
+      "피곤하면 잠깐 쉬어야 한다는 걸 알고 쉬는 시간을 챙긴다."
+    ],
+    advice:[
+      "하고 싶은 것과 해야 할 것 사이에서 균형을 아주 잘 잡아요. 이 힘은 공부뿐 아니라 앞으로 어떤 일에도 도움이 됩니다. 마음을 가라앉히는 나만의 방법도 소중하게 이어 가세요.",
+      "스스로 조절하는 힘이 든든한 편이에요. 가끔 흔들려도 다시 돌아오는 모습이 좋아요. 이어 가기: 잘 참아 낸 날을 떠올리며 그때 어떻게 했는지 기억해 두세요.",
+      "잘 참을 때도 있고 나중에 후회할 때도 있는 중간 단계예요. 첫걸음: 공부하는 30분 동안만 휴대전화를 다른 방에 두어 보세요.",
+      "유혹을 이기기 힘든 순간이 많은 것 같아요. 의지만으로 버티기보다 환경을 바꾸는 쪽이 훨씬 쉬워요. 첫걸음: 휴대전화와 게임 시간을 가족과 함께 정해서 눈에 보이는 곳에 적어 두세요.",
+      "지금은 유혹이 공부를 자주 이기는 상태일 수 있어요. 의지가 약해서라기보다 환경이 그렇게 되어 있는 경우가 많아요. 첫걸음: 공부하는 15분 동안만 휴대전화를 가족에게 맡겨 보세요."
+    ]
+  },
+  {
+    name:"집중력", hint:"공부에 몰입하는 힘",
+    q:[
+      "수업 시간에 선생님 말씀을 따라가며 듣는다.",
+      "공부를 시작하면 30분 정도는 한 가지에 집중할 수 있다.",
+      "딴생각이 들면 알아차리고 다시 돌아올 수 있다.",
+      "주변이 조금 시끄러워도 하던 일에 집중할 수 있다.",
+      "집중이 안 될 때 과목이나 방법을 바꿔 본다.",
+      "공부한 시간에 비해 머리에 남는 게 있다고 느낀다.",
+      "책상에 앉으면 금방 공부 모드로 들어간다.",
+      "시간 가는 줄 모르고 빠져들 때가 있다."
+    ],
+    advice:[
+      "집중력이 아주 좋은 편이에요. 같은 시간을 공부해도 남는 게 많을 수 있어요. 집중이 잘 되는 시간대와 장소를 알아 두고, 중요한 공부를 그때 배치해 보세요.",
+      "집중력이 든든한 편이에요. 흐트러져도 다시 돌아올 수 있는 힘이 있어요. 이어 가기: 집중이 가장 잘 되는 시간이 언제인지 한 주 동안 기록해 보세요.",
+      "집중이 잘 되는 때와 흩어지는 때가 섞여 있어요. 첫걸음: 25분 집중하고 5분 쉬는 방식을 한 번 해 보세요.",
+      "집중이 쉽지 않은 때가 많은 것 같아요. 집중력은 타고나는 것만이 아니라 연습으로도 달라질 수 있어요. 첫걸음: 10분 타이머를 맞추고 한 가지만 해 보세요. 해냈다면 조금씩 늘려 가요.",
+      "공부에 집중하기가 많이 어렵게 느껴질 수 있어요. 지금은 시간을 아주 짧게 쪼개는 게 좋아요. 첫걸음: 5분 타이머로 한 가지만 해 보고 쉬어 보세요. 오랫동안 많이 힘들다면 학교 선생님이나 전문가와 이야기해 보는 것도 좋아요."
+    ]
+  }
+];
+
+var MAX_PER_AREA = 16;           // 문항 8개 × 최대 2점
+// 5단계: 0=아주 든든해요(14~16점) 1=든든해요(11~13) 2=보통이에요(8~10) 3=조금 신경 써 봐요(5~7) 4=첫걸음부터 해 봐요(0~4)
+var CUTS = [14, 11, 8, 5];
+var LV = [
+  {label:"아주 든든해요", color:"#1F7A68"},
+  {label:"든든해요", color:"#4AA58F"},
+  {label:"보통이에요", color:"#4A87C7"},
+  {label:"조금 신경 써 봐요", color:"#E0953A"},
+  {label:"첫걸음부터 해 봐요", color:"#D9703A"}
+];
+
+/* ====== 상태 ====== */
+var state = {
+  step:-1,   // -1: 시작, 0~5: 영역, 6: 결과
+  ans:AREAS.map(function(a){ return a.q.map(function(){ return null; }); })
+};
+
+function level(score){ for (var i = 0; i < CUTS.length; i++){ if (score >= CUTS[i]) return i; } return CUTS.length; }
+function areaScore(i){ return state.ans[i].reduce(function(s,v){ return s + (v === null ? 0 : v); }, 0); }
+function answeredCount(i){ return state.ans[i].filter(function(v){ return v !== null; }).length; }
+
+/* ====== 화면 ====== */
+var app = document.getElementById("app");
+
+function stepsBar(){
+  var h = '<div class="steps">';
+  for (var i = 0; i < AREAS.length; i++){
+    h += '<span class="' + (i < state.step ? "done" : (i === state.step ? "now" : "")) + '"></span>';
+  }
+  return h + '</div>';
+}
+
+function viewIntro(){
+  return '' +
+  '<div class="card">' +
+    '<div class="pill">공부 습관 자기 점검</div>' +
+    '<h1>나의 공부 습관,<br><span class="hl">어디가 든든하고 어디를 키워 볼까?</span></h1>' +
+    '<p>공부 마음가짐부터 집중력까지 6가지 영역을 스스로 살펴보는 점검표예요. 영역마다 8문항, 모두 48문항이고 5분이면 끝나요.</p>' +
+    '<ul class="guide">' +
+      '<li>정답은 없어요. 요즘의 나를 있는 그대로 골라 주세요.</li>' +
+      '<li>점수는 평가나 순위가 아니라, 어디부터 시작하면 좋을지 알려 주는 힌트예요.</li>' +
+      '<li>입력한 내용은 어디에도 저장되거나 전송되지 않아요.</li>' +
+    '</ul>' +
+    '<div class="row"><span></span><button class="btn" data-act="start">점검 시작하기</button></div>' +
+  '</div>' +
+  '<p class="foot">이 점검표는 AI의 도움을 받아 만든 참고용 체크리스트이며 전문 검사가 아닙니다.</p>';
+}
+
+function viewQuiz(){
+  var i = state.step, a = AREAS[i];
+  var h = '<div class="card">' + stepsBar() +
+    '<div class="pill">' + (i + 1) + ' / ' + AREAS.length + '</div>' +
+    '<h2>' + a.name + '</h2><p class="muted">' + a.hint + '</p>';
+  a.q.forEach(function(text, qi){
+    h += '<div class="q"><p class="qt">' + (qi + 1) + '. ' + text + '</p><div class="choices">';
+    CHOICES.forEach(function(c){
+      h += '<button class="choice' + (state.ans[i][qi] === c.v ? " on" : "") + '" data-q="' + qi + '" data-v="' + c.v + '">' + c.label + '</button>';
+    });
+    h += '</div></div>';
+  });
+  h += '<div class="row">' +
+    '<button class="btn ghost" data-act="prev">' + (i === 0 ? "처음으로" : "이전 영역") + '</button>' +
+    '<button class="btn" data-act="next" id="nextBtn">' + (i === AREAS.length - 1 ? "결과 보기" : "다음 영역") + '</button>' +
+    '</div><p class="muted" id="cnt" style="margin-top:10px;text-align:right"></p></div>';
+  return h;
+}
+
+function radarSvg(scores){
+  var W = 470, H = 330, cx = 235, cy = 165, R = 100, n = AREAS.length;
+  function pt(i, r){
+    var ang = (-90 + i * (360 / n)) * Math.PI / 180;
+    return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+  }
+  var s = '<svg class="radar" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="영역별 점검 결과 차트">';
+  [0.25, 0.5, 0.75, 1].forEach(function(k){
+    var p = [];
+    for (var i = 0; i < n; i++) p.push(pt(i, R * k).map(function(x){ return x.toFixed(1); }).join(","));
+    s += '<polygon points="' + p.join(" ") + '" fill="none" stroke="#D5E3EA" stroke-width="1"/>';
+  });
+  for (var i = 0; i < n; i++){
+    var e = pt(i, R);
+    s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + e[0].toFixed(1) + '" y2="' + e[1].toFixed(1) + '" stroke="#D5E3EA"/>';
+  }
+  var dp = [];
+  for (var j = 0; j < n; j++) dp.push(pt(j, R * scores[j] / MAX_PER_AREA).map(function(x){ return x.toFixed(1); }).join(","));
+  s += '<polygon points="' + dp.join(" ") + '" fill="rgba(46,139,122,.28)" stroke="#2E8B7A" stroke-width="2.5" stroke-linejoin="round"/>';
+  for (var k = 0; k < n; k++){
+    var q = pt(k, R * scores[k] / MAX_PER_AREA);
+    s += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="4" fill="#1F3A5F"/>';
+    var l = pt(k, R + 26);
+    var anchor = Math.abs(l[0] - cx) < 8 ? "middle" : (l[0] > cx ? "start" : "end");
+    s += '<text x="' + l[0].toFixed(1) + '" y="' + (l[1] + 4).toFixed(1) + '" text-anchor="' + anchor + '" font-size="16" font-weight="600" fill="#1F3A5F">' + AREAS[k].name + '</text>';
+  }
+  return s + '</svg>';
+}
+
+/* 결과 요약 문구: 점수 차이와 전체 수준을 함께 보고 정한다 */
+/* 조언 문장에서 '이어 가기:' '첫걸음:' 앞에서 줄을 나눈다 */
+function fmtAdvice(t){
+  return t.replace(/\s*(이어 가기|첫걸음):\s*/, '<br><b class="step">$1</b> ');
+}
+
+function summaryTexts(scores){
+  var max = Math.max.apply(null, scores), min = Math.min.apply(null, scores);
+  var best = [], low = [];
+  scores.forEach(function(s, i){
+    if (s === max) best.push(AREAS[i].name);
+    if (s === min) low.push(AREAS[i].name);
+  });
+  var allLow = (max <= 7), allHigh = (min >= 11), balanced = (max - min <= 3);
+  if (allLow)   return {left:"작은 실천부터 시작해 봐요", right:"한 가지만 골라 시작하면 충분해요"};
+  if (allHigh)  return {left:"전반적으로 안정적인 편이에요", right:"지금처럼 이어 가면 좋아요"};
+  if (balanced) return {left:"전체적으로 고른 편이에요", right:"특별히 두드러지는 차이가 없어요"};
+  return {
+    left:  max >= 11 ? best.slice(0, 2).join(" · ") : "조금씩 키워 갈 수 있어요",
+    right: min <= 7  ? low.slice(0, 2).join(" · ")  : "조금 더 살펴볼 영역이 있어요"
+  };
+}
+
+function viewResult(){
+  var scores = AREAS.map(function(_, i){ return areaScore(i); });
+  var sm = summaryTexts(scores);
+  var h = '<div class="card">' +
+    '<div class="pill">점검 결과</div>' +
+    '<h1>나의 공부 습관 <span class="hl">한눈에 보기</span></h1>' +
+    '<p class="muted">잘하고 못하는 것을 가리는 결과가 아니에요. 요즘 나의 모습을 가볍게 돌아보세요.</p>' +
+    radarSvg(scores) +
+    '<div class="summary">' +
+      '<div class="sbox a"><small>나의 공부 습관</small><b>' + sm.left + '</b></div>' +
+      '<div class="sbox"><small>앞으로 살펴볼 점</small><b>' + sm.right + '</b></div>' +
+    '</div></div>';
+
+  h += '<div class="card"><h2>영역별 점검 결과</h2><p class="muted">점수는 순위가 아니라 힌트예요. 한 번에 한 가지만 시작해도 충분해요.</p>';
+  AREAS.forEach(function(a, i){
+    var lv = level(scores[i]), pct = Math.round(scores[i] / MAX_PER_AREA * 100);
+    h += '<div class="arow">' +
+      '<div class="ahead"><h3>' + a.name + '</h3><span class="badge" style="background:' + LV[lv].color + '">' + LV[lv].label + '</span></div>' +
+      '<div class="bar"><i style="width:' + pct + '%;background:' + LV[lv].color + '"></i></div>' +
+      '<p class="muted" style="margin-bottom:6px">' + scores[i] + ' / ' + MAX_PER_AREA + '점</p>' +
+      '<p>' + fmtAdvice(a.advice[lv]) + '</p></div>';
+  });
+  h += '</div>';
+
+  h += '<div class="card"><h2>점수보다 중요한 건 나를 이해하는 것</h2>' +
+    '<p>이 결과는 잘하고 못하는 것을 판단하는 기준이 아니에요.</p>' +
+    '<p>지금 나의 공부 습관을 돌아보고, 앞으로 어떤 부분을 조금씩 바꿔 보면 좋을지 생각해 보는 자료예요. 점수는 내가 답한 내용을 정리한 참고 지표일 뿐, 학습 능력의 등급이 아니에요.</p></div>';
+
+  h += '<div class="card">' +
+    '<h2>이번 주, 하나만 해 본다면?</h2>' +
+    '<p>결과를 보고 가장 마음에 걸리거나 바꿔 보고 싶은 영역 하나를 골라 보세요. 모두 바꿀 필요는 없어요.</p>' +
+    '<div class="goal-choices">';
+  AREAS.forEach(function(a, i){
+    h += '<button class="goal-choice" type="button" data-goal="' + i + '">' + a.name + '</button>';
+  });
+  h += '</div>' +
+    '<div class="goal-result" id="goalResult" aria-live="polite">영역을 하나 선택하면 이번 주에 해 볼 작은 실천을 보여 줄게요.</div></div>';
+
+  h += '<div class="card"><div class="note"><b>함께 보는 부모님께</b><br>' +
+    '결과를 평가하거나 지적하기보다 아이가 왜 그렇게 골랐는지 먼저 들어 주세요. 아이가 직접 고른 한 가지를 일주일 동안 가볍게 시도해 보는 것으로 충분해요.</div>' +
+    '<div class="row noprint"><button class="btn ghost" data-act="restart">다시 해 보기</button>' +
+    '<button class="btn" data-act="print">결과 저장·인쇄하기</button></div></div>' +
+    '<p class="foot">이 점검표는 AI의 도움을 받아 만든 참고용 체크리스트이며 전문 검사가 아닙니다. 점수는 다른 사람과 비교하거나 평가하는 데 쓰지 마세요. 오랫동안 많이 힘들다면 학교 선생님이나 전문가와 상담해 보세요.</p>';
+  return h;
+}
+
+function render(){
+  app.innerHTML = state.step === -1 ? viewIntro() : (state.step < AREAS.length ? viewQuiz() : viewResult());
+  if (state.step >= 0 && state.step < AREAS.length) updateNav();
+  window.scrollTo(0, 0);
+}
+
+function updateNav(){
+  var i = state.step, c = answeredCount(i), total = AREAS[i].q.length;
+  var btn = document.getElementById("nextBtn"), cnt = document.getElementById("cnt");
+  if (btn) btn.disabled = (c < total);
+  if (cnt) cnt.textContent = c + " / " + total + " 문항 응답";
+}
+
+/* ====== 이벤트 ====== */
+app.addEventListener("click", function(e){
+  var t = e.target.closest("button");
+  if (!t) return;
+  if (t.classList.contains("choice")){
+    var qi = +t.getAttribute("data-q"), v = +t.getAttribute("data-v");
+    state.ans[state.step][qi] = v;
+    var sib = t.parentElement.querySelectorAll(".choice");
+    for (var k = 0; k < sib.length; k++) sib[k].classList.toggle("on", sib[k] === t);
+    updateNav();
+    return;
+  }
+  if (t.classList.contains("goal-choice")){
+    var gi = +t.getAttribute("data-goal");
+    var gb = app.querySelectorAll(".goal-choice");
+    for (var g = 0; g < gb.length; g++) gb[g].classList.toggle("on", gb[g] === t);
+    var box = document.getElementById("goalResult");
+    if (box) box.innerHTML = "<b>" + AREAS[gi].name + "</b><br>" + fmtAdvice(AREAS[gi].advice[level(areaScore(gi))]);
+    return;
+  }
+  var act = t.getAttribute("data-act");
+  if (act === "start") { state.step = 0; render(); }
+  else if (act === "next") { if (answeredCount(state.step) === AREAS[state.step].q.length) { state.step++; render(); } }
+  else if (act === "prev") { state.step = state.step === 0 ? -1 : state.step - 1; render(); }
+  else if (act === "restart") {
+    state.ans = AREAS.map(function(a){ return a.q.map(function(){ return null; }); });
+    state.step = -1; render();
+  }
+  else if (act === "print") { window.print(); }
+});
+
+render();
+</script>
+</body>
+</html>
