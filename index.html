@@ -84,6 +84,7 @@ p{margin:0 0 10px}
 .goal-choice:hover,.goal-choice.on{border-color:var(--accent);background:var(--mint);color:#16524A}
 .goal-result{padding:14px 16px;border-radius:14px;background:#F3F7FA;font-size:14px;color:var(--ink);min-height:54px}
 @media print{.goal-choices{display:none}}
+.linkbtn{appearance:none;border:0;background:none;padding:0;font:inherit;color:var(--accent);text-decoration:underline;cursor:pointer}
 </style>
 </head>
 <body>
@@ -774,7 +775,9 @@ function viewResult(){
   h += '<div class="card"><div class="note"><b>함께 보는 부모님께</b><br>' +
     '결과를 평가하거나 지적하기보다 아이가 왜 그렇게 골랐는지 먼저 들어 주세요. 아이가 직접 고른 한 가지를 일주일 동안 가볍게 시도해 보는 것으로 충분해요.</div>' +
     '<div class="row noprint"><button class="btn ghost" data-act="restart">다시 해 보기</button>' +
-    '<button class="btn" data-act="pdf" id="pdfBtn">PDF로 저장하기</button></div></div>' +
+    '<button class="btn" data-act="pdf" id="pdfBtn">PDF로 저장하기</button></div>' +
+    '<div class="goal-result noprint" id="saveHelp" style="display:none;margin-top:14px" aria-live="polite"></div>' +
+    '<p class="muted noprint" style="margin:12px 0 0;text-align:right">저장이 안 되나요? <button class="linkbtn" data-act="help" type="button">다른 저장 방법 보기</button></p></div>' +
     '<p class="foot">이 점검표는 AI의 도움을 받아 만든 참고용 체크리스트이며 전문 검사가 아닙니다. 점수는 다른 사람과 비교하거나 평가하는 데 쓰지 마세요. 오랫동안 많이 힘들다면 학교 선생님이나 전문가와 상담해 보세요.</p>';
   return h;
 }
@@ -793,15 +796,17 @@ function updateNav(){
 }
 
 
-/* ====== 결과를 PDF 파일로 저장 (PC·모바일 공통, 인쇄창 없이 바로 내려받기) ====== */
-function savePdf(btn){
-  if (!window.html2canvas || !window.jspdf) { window.print(); return; }
-  var root = document.getElementById("app"), SC = 2, label = btn.textContent;
-  btn.disabled = true; btn.textContent = "PDF 만드는 중…";
+/* ====== 결과 저장: PDF 파일 / (앱 안에서 막힐 때) 이미지로 길게 눌러 저장 ====== */
+var SAVE_BG = "#EAF5F5";
+function inAppBrowser(){
+  return /NAVER\(inapp|KAKAOTALK|Instagram|FBAN|FBAV|Line\/|DaumApps|; wv\)/i.test(navigator.userAgent || "");
+}
+/* 결과 화면을 캡처해 A4 한 쪽 크기의 canvas 조각 목록으로 만든다 */
+function capturePages(){
+  var root = document.getElementById("app"), SC = 2, cuts = [];
   window.scrollTo(0, 0);
-  var cuts = [];
-  window.html2canvas(root, {
-    scale: SC, backgroundColor: "#EAF5F5", useCORS: true, scrollX: 0, scrollY: 0,
+  return window.html2canvas(root, {
+    scale: SC, backgroundColor: SAVE_BG, useCORS: true, scrollX: 0, scrollY: 0,
     onclone: function(doc){
       var n = doc.querySelectorAll(".noprint, .goal-choices");
       for (var i = 0; i < n.length; i++) n[i].style.display = "none";
@@ -816,8 +821,7 @@ function savePdf(btn){
   }).then(function(cv){
     var PW = 595.28, PH = 841.89, M = 28;
     var f = (PW - 2 * M) / cv.width, pageCv = Math.floor((PH - 2 * M) / f);
-    var doc = new window.jspdf.jsPDF({unit:"pt", format:"a4", orientation:"portrait"});
-    var y = 0, first = true;
+    var out = [], y = 0;
     while (y < cv.height - 2){
       var end = Math.min(y + pageCv, cv.height);
       if (end < cv.height){
@@ -826,19 +830,76 @@ function savePdf(btn){
         if (best) end = best;
       }
       var sl = document.createElement("canvas"); sl.width = cv.width; sl.height = end - y;
-      var cx = sl.getContext("2d"); cx.fillStyle = "#EAF5F5"; cx.fillRect(0, 0, sl.width, sl.height);
+      var cx = sl.getContext("2d"); cx.fillStyle = SAVE_BG; cx.fillRect(0, 0, sl.width, sl.height);
       cx.drawImage(cv, 0, y, cv.width, end - y, 0, 0, cv.width, end - y);
-      if (!first) doc.addPage();
-      doc.setFillColor(234, 245, 245); doc.rect(0, 0, PW, PH, "F");
-      doc.addImage(sl.toDataURL("image/jpeg", 0.92), "JPEG", M, M, PW - 2 * M, (end - y) * f);
-      first = false; y = end;
+      out.push(sl); y = end;
     }
-    doc.save("공부습관_점검결과.pdf");
-  }).catch(function(){
-    window.print();
-  }).then(function(){
-    btn.disabled = false; btn.textContent = label;
+    return {pages: out, f: f, PW: PW, PH: PH, M: M};
   });
+}
+function setBusy(btn, on, label){ if (!btn) return; btn.disabled = on; if (label) btn.textContent = label; }
+
+function showHelp(inApp){
+  var box = document.getElementById("saveHelp"); if (!box) return;
+  box.style.display = "block";
+  box.innerHTML = (inApp
+    ? '<b>앱 안에서는 파일 저장이 막혀 있어요.</b><br>아래 둘 중 하나로 저장해 주세요.'
+    : '<b>PDF 저장이 잘 안 되나요?</b><br>아래 방법으로 저장할 수 있어요.') +
+    '<ul class="guide" style="margin:8px 0 10px"><li>링크를 복사해서 크롬·사파리 같은 기본 브라우저에서 열면 PDF로 저장돼요.</li>' +
+    '<li>또는 결과를 이미지로 띄운 뒤, 이미지를 길게 눌러 사진첩에 저장할 수 있어요.</li></ul>' +
+    '<div class="row" style="margin-top:6px"><button class="btn ghost" data-act="copylink" type="button">링크 복사</button>' +
+    '<button class="btn" data-act="imgs" type="button">결과를 이미지로 보기</button></div>' +
+    '<p class="muted" id="copyMsg" style="margin:8px 0 0"></p>';
+}
+
+function savePdf(btn){
+  if (inAppBrowser()) { showHelp(true); return; }
+  if (!window.html2canvas || !window.jspdf) { showHelp(false); return; }
+  var label = btn.textContent; setBusy(btn, true, "PDF 만드는 중…");
+  capturePages().then(function(r){
+    var doc = new window.jspdf.jsPDF({unit:"pt", format:"a4", orientation:"portrait"});
+    r.pages.forEach(function(sl, i){
+      if (i) doc.addPage();
+      doc.setFillColor(234, 245, 245); doc.rect(0, 0, r.PW, r.PH, "F");
+      doc.addImage(sl.toDataURL("image/jpeg", 0.92), "JPEG", r.M, r.M, r.PW - 2 * r.M, sl.height * r.f);
+    });
+    doc.save("공부습관_점검결과.pdf");
+    var box = document.getElementById("saveHelp");
+    if (box){ box.style.display = "block"; box.innerHTML = 'PDF를 만들었어요. 저장이 안 됐다면 <button class="linkbtn" data-act="help" type="button">여기를 눌러 다른 방법을 보세요</button>.'; }
+  }).catch(function(){ showHelp(false); }).then(function(){ setBusy(btn, false, label); });
+}
+
+function showImages(btn){
+  if (!window.html2canvas) { showHelp(true); return; }
+  var label = btn ? btn.textContent : ""; setBusy(btn, true, "이미지 만드는 중…");
+  capturePages().then(function(r){
+    var ov = document.createElement("div");
+    ov.id = "imgView";
+    ov.style.cssText = "position:fixed;left:0;top:0;right:0;bottom:0;z-index:99;overflow:auto;background:" + SAVE_BG + ";-webkit-overflow-scrolling:touch;padding:14px 12px 40px";
+    var html = '<div style="max-width:720px;margin:0 auto"><div class="note" style="margin-bottom:12px"><b>이미지를 길게 눌러 저장하세요</b><br>각 이미지를 길게 누르면 ‘이미지 저장’이 나와요. 모두 저장하면 PDF 한 부와 같아요.</div>';
+    r.pages.forEach(function(sl, i){
+      html += '<img alt="점검 결과 ' + (i + 1) + '쪽" src="' + sl.toDataURL("image/jpeg", 0.92) + '" style="display:block;width:100%;height:auto;margin:0 0 10px;border-radius:12px;background:#fff">';
+    });
+    html += '<button class="btn" data-ov="close" type="button" style="width:100%">닫기</button></div>';
+    ov.innerHTML = html;
+    ov.addEventListener("click", function(e){ var b = e.target.closest("button"); if (b && b.getAttribute("data-ov") === "close") ov.parentNode.removeChild(ov); });
+    document.body.appendChild(ov);
+  }).catch(function(){
+    var m = document.getElementById("copyMsg"); if (m) m.textContent = "이미지를 만들지 못했어요. 링크를 복사해 기본 브라우저에서 열어 주세요.";
+  }).then(function(){ setBusy(btn, false, label); });
+}
+
+function copyLink(){
+  var m = document.getElementById("copyMsg"), url = location.href;
+  function ok(){ if (m) m.textContent = "링크를 복사했어요. 기본 브라우저 주소창에 붙여 넣어 주세요."; }
+  function manual(){
+    var ta = document.createElement("textarea"); ta.value = url; ta.style.cssText = "position:fixed;left:0;top:0;opacity:0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var done = false; try { done = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    if (done) ok(); else if (m) m.textContent = "복사가 안 돼요. 앱 메뉴의 ‘다른 브라우저로 열기’를 이용해 주세요.";
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok, manual); else manual();
 }
 
 /* ====== 이벤트 ====== */
@@ -870,6 +931,9 @@ app.addEventListener("click", function(e){
     state.step = -1; render();
   }
   else if (act === "pdf") { savePdf(t); }
+  else if (act === "imgs") { showImages(t); }
+  else if (act === "copylink") { copyLink(); }
+  else if (act === "help") { showHelp(inAppBrowser()); }
 });
 
 render();
